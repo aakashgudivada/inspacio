@@ -13,6 +13,12 @@ let currentIndex = 0;
 let isEditing = false;
 let canWork = true;
 
+const loading = document.getElementById("load");
+
+setTimeout(() => {
+    loading.style.display = "none"
+}, 2500);
+
 const outputImg = document.getElementById("outputImg");
 const imageModal = document.getElementById("imageModal");
 const modalImage = document.getElementById("modalImage");
@@ -334,7 +340,8 @@ navbarImgs.forEach(img => {
     img.addEventListener("mouseenter", (e) => {
         const title = e.target.title || e.target.parentElement.querySelector('img')?.title || "Tool";
         label.textContent = title;
-        label.style.display = 'block';
+        label.style.display = "flex";
+        e.target.parentElement.appendChild(label)
     });
     img.addEventListener("mouseleave", () => {
         label.style.display = 'none';

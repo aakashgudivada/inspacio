@@ -1,6 +1,7 @@
 *{
     margin: 0;
     padding: 0;
+    font-family: "Inter",sans-serif;
 }
 
 body{
@@ -161,10 +162,6 @@ body{
     right: 0;
 }
 
-#label{
-    display: none;
-}
-
 #outputImg{
     display: none
 }
@@ -178,4 +175,62 @@ body{
 .upper-canvas {
     position: absolute;
     left: 80%;
+}
+
+.load{
+    width: 100vw;
+    height: 100vh;
+    z-index: 150;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.9);
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+#label{
+    position: absolute;
+    display: none;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-size: 75%;
+    white-space: nowrap;
+    width: auto;
+    padding: 4px;
+    color: #fff;
+    margin-top: 90px;
+    text-align: center;
+    transform: translateX(-10%);
+}
+
+#loadicon{
+    width: 5vw;
+    position: absolute;
+    height: 5vw;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.loading{
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    left: 47.5%;
+    display: flex;
+    border: 10px solid rgba(0, 0, 0, 0.8);
+    border-top: 10px solid #3b46de;
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }

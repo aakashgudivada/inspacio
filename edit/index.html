@@ -4,16 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="./index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="load" id="load">
+    <img id="loadicon" src="/src/imgs/logoonee.png">
+    <div class="loading"></div>
+  </div>
     <div class="viewport">
         <div class="navbar">
             <input type="file" id="add" hidden accept="image/*">
-            <label for="add"><img src="/src/imgs/plus (1).png" title="Add Image"></label>
+            <img src="/src/imgs/plus (1).png" title="Add Image"></label>
+
             <img id="cropBtn" src="/src/imgs/tool-crop.png" title="Crop">
+
             <img id="pencilBtn" src="/src/imgs/pencil (2).png" title="Draw">
+
             <img id="textBtn" src="/src/imgs/text.png" title="Add Text">
             <img id="undoBtn" src="/src/imgs/undo-alt (1).png" title="Undo">
             <img id="redoBtn" src="/src/imgs/redo-alt (1).png" title="Redo">

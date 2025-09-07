@@ -49,6 +49,7 @@
   
   .nav-links a {
     margin-left: 25px;
+    cursor: pointer;
     text-decoration: none;
     color: #333;
     font-weight: 500;
@@ -194,6 +195,7 @@ footer p{
 footer h2{
     color: #fff;
     width: 40vw;
+    font-size: 110%;
     position: absolute;
     margin-top: -70px;
     right: 15%;
@@ -204,7 +206,9 @@ footer h2{
 footer h4{
     color: #fff;
     right: 15vw;
-    margin-top: auto;
+    margin-top: -20px;
+    font-size: 80%;
+    font-weight: 200;
     opacity: 0.7;
     position: absolute;
     width: 40vw;
@@ -230,4 +234,11 @@ footer button:hover{
     height: 50px;
     display: none;
     position: absolute;
+}
+
+video{
+  width: 70vw;
+  margin-left: 15vw;
+  height: auto;
+  display: none;
 }

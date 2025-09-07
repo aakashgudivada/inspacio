@@ -15,7 +15,7 @@
     <img>
     <div class="logo">Inspacio</div>
     <nav class="nav-links">
-      <a href="#">About</a>
+      <a onclick="document.getElementById('casetitle').scrollIntoView({ behavior: 'smooth' })">About</a>
       <a href="#">Contact</a>
     </nav>
   </header>
@@ -24,6 +24,7 @@
     <p1 id="desc">The AI-powered workspace to help you read, write, and organize research with ease.</p1>
     <button onclick="window.location.href = `/edit`" class="cta-button">Start Generating</button>
   </main>
+  <video autoplay="on"></video>
   <h3 id="casetitle">USE CASES</h3>
   <p id="casedesc">Types of things you can find help with</p>
   <div class="cases">
