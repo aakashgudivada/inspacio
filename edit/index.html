@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+</head>
+<body>
+    <div class="viewport">
+        <div class="navbar">
+            <input type="file" id="add" hidden accept="image/*">
+            <label for="add"><img src="/src/imgs/plus (1).png" title="Add Image"></label>
+            <img id="cropBtn" src="/src/imgs/tool-crop.png" title="Crop">
+            <img id="pencilBtn" src="/src/imgs/pencil (2).png" title="Draw">
+            <img id="textBtn" src="/src/imgs/text.png" title="Add Text">
+            <img id="undoBtn" src="/src/imgs/undo-alt (1).png" title="Undo">
+            <img id="redoBtn" src="/src/imgs/redo-alt (1).png" title="Redo">
+            <img id="eraserBtn" src="/src/imgs/eraser.png" title="Erase">
+            <img id="downloadBtn" src="/src/imgs/download (1).png" title="Download">
+        </div>
+        <label id="label">ADD</label>
+        <div class="canvas-area">
+            <div class="canvas-output-wrapper">
+              <canvas id="editor" width="500" height="500"></canvas>
+              <img id="outputImg" src="/src/imgs/DESIGN HERE (1).png" />
+            </div>
+          
+            <div class="controls">
+              <input id="prompt" rows="3" placeholder="Add additional instructions (optional)..."></input>
+              <button id="generateBtn">Generate Image</button>
+            </div>
+          
+            <div class="nav-arrows">
+              <button id="prevBtn">⟵</button>
+              <button id="nextBtn">⟶</button>
+            </div>
+          </div>          
+        <script src="index.js"></script>
+    </div>
+</body>
+</html>
