@@ -1,111 +1,113 @@
-// ================== Fabric.js Canvas ================== //
+// ================== Fabric.js Canvas Setup ================== //
 const canvas = new fabric.Canvas('editor', {
     width: 500,
     height: 500,
-    backgroundColor: '#f0f0f0'
+    backgroundColor: '#f0f0f0',
+    preserveObjectStacking: true,
 });
 
-// ================== State Management ================== //
-let history = [];
-let redoStack = [];
-let generatedImages = [];
-let currentIndex = 0;
-let isEditing = false;
-let canWork = true;
+// ================== State & Pages Management ================== //
+let pages = [];           // Each page holds JSON string of canvas state
+let currentPageIndex = 0; // Tracks which page is active
+let isDrawing = false;    // Pencil tool state
+let canWork = true;       // To prevent spamming generate button
 
 const loading = document.getElementById("load");
-
-setTimeout(() => {
-    loading.style.display = "none"
-}, 2500);
-
-const outputImg = document.getElementById("outputImg");
-const imageModal = document.getElementById("imageModal");
-const modalImage = document.getElementById("modalImage");
 const genButton = document.getElementById("generateBtn");
+const promptInput = document.getElementById("prompt");
+const pageCountLabel = document.getElementById("pagecount");
+const fileInput = document.getElementById("add");
 
-function saveState() {
-    history.push(JSON.stringify(canvas.toJSON()));
-    redoStack = [];
-    if (history.length > 20) history.shift(); // Limit history
+// Hide loading after 2.5 seconds
+window.onload = () => {
+    setTimeout(() => {
+        loading.style.display = "none";
+    }, 2500);
+};
+
+// ================== Save/Load Canvas State ================== //
+function savePageState() {
+    // Save current canvas JSON into pages array at currentPageIndex
+    pages[currentPageIndex] = JSON.stringify(canvas.toJSON());
+    updatePageCount();
 }
 
-function enterEditingMode() {
-    if (!isEditing) {
-        isEditing = true;
-        document.querySelector('.canvas-output-wrapper').classList.add('editing-mode');
-        outputImg.classList.add('hidden');
+function loadPageState(index) {
+    if (index < 0 || index >= pages.length) return;
+    currentPageIndex = index;
+    if (pages[index]) {
+        canvas.loadFromJSON(pages[index], () => {
+            canvas.renderAll();
+        });
+    } else {
+        canvas.clear();
+        canvas.backgroundColor = '#f0f0f0';
         canvas.renderAll();
     }
+    updatePageCount();
+    updateNavButtons();
 }
 
-function updateNavigationButtons() {
-    document.getElementById("prevBtn").disabled = currentIndex <= 0 || generatedImages.length === 0;
-    document.getElementById("nextBtn").disabled = currentIndex >= generatedImages.length - 1 || generatedImages.length === 0;
+// ================== Navigation ================== //
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function updatePageCount() {
+    pageCountLabel.textContent = `${currentPageIndex + 1}/${pages.length || 1} Pages`;
 }
 
-// ================== Add Image ================== //
-document.getElementById("add").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    enterEditingMode();
-    const reader = new FileReader();
-    reader.onload = function (f) {
-        fabric.Image.fromURL(f.target.result, function (img) {
-            // Scale image to fit canvas better
-            const maxWidth = canvas.width * 0.6;
-            const maxHeight = canvas.height * 0.6;
-            const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-            
-            img.set({
-                left: canvas.width / 2,
-                top: canvas.height / 2,
-                originX: 'center',
-                originY: 'center',
-                scaleX: scale,
-                scaleY: scale,
-                hasControls: true
-            });
-            canvas.add(img).setActiveObject(img);
-            canvas.renderAll();
-            saveState();
-        });
-    };
-    reader.readAsDataURL(file);
+function updateNavButtons() {
+    prevBtn.disabled = currentPageIndex === 0;
+    nextBtn.disabled = currentPageIndex === pages.length - 1 || pages.length === 0;
+}
+
+prevBtn.onclick = () => {
+    savePageState();
+    if (currentPageIndex > 0) {
+        loadPageState(currentPageIndex - 1);
+    }
+};
+
+nextBtn.onclick = () => {
+    savePageState();
+    if (currentPageIndex < pages.length - 1) {
+        loadPageState(currentPageIndex + 1);
+    }
+};
+
+// ================== Canvas Interaction ================== //
+// Discard active object when clicking on empty canvas space
+canvas.on('mouse:down', (opt) => {
+    if (!opt.target) {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+    }
 });
 
-// ================== Pencil Tool ================== //
+canvas.on('object:modified', savePageState);
+canvas.on('object:added', () => {
+    if (!isDrawing) savePageState();
+});
+
+// ================== Tools ================== //
+
+// Pencil tool toggle
 document.getElementById("pencilBtn").onclick = () => {
-    enterEditingMode();
+    isDrawing = !canvas.isDrawingMode;
     canvas.isDrawingMode = !canvas.isDrawingMode;
-    
+
     if (canvas.isDrawingMode) {
         canvas.freeDrawingBrush.width = 3;
         canvas.freeDrawingBrush.color = "black";
         document.getElementById("pencilBtn").style.background = "#e0e0e0";
     } else {
         document.getElementById("pencilBtn").style.background = "";
+        savePageState();
     }
 };
 
-// Save state after drawing
-canvas.on('mouse:up', () => {
-    if (canvas.isDrawingMode) {
-        setTimeout(saveState, 100);
-    }
-});
-
-canvas.on('mouse:down', function (options) {
-    if (!options.target) {
-        canvas.discardActiveObject();
-        canvas.renderAll();
-    }
-});
-
-// ================== Text Tool ================== //
+// Add text tool
 document.getElementById("textBtn").onclick = () => {
-    enterEditingMode();
     const text = new fabric.Textbox("Click to edit text", {
         left: canvas.width / 2,
         top: canvas.height / 2,
@@ -114,84 +116,127 @@ document.getElementById("textBtn").onclick = () => {
         fontSize: 24,
         fill: "black",
         width: 200,
-        hasControls: true
+        hasControls: true,
     });
     canvas.add(text).setActiveObject(text);
     canvas.renderAll();
-    saveState();
+    savePageState();
 };
 
-// ================== Undo / Redo ================== //
-document.getElementById("undoBtn").onclick = () => {
-    if (history.length > 1) {
-        redoStack.push(history.pop());
-        const restore = history[history.length - 1];
-        if (restore) {
-            canvas.loadFromJSON(restore, () => {
-                canvas.renderAll();
-            });
-        } else {
-            canvas.clear();
-            canvas.renderAll();
-        }
+// Undo / Redo system using fabric's history is not native,
+// so we implement a simple undo/redo per page via history stacks:
+
+let history = [[]];  // Array of arrays for each page
+let historyStep = [0]; // Current index in history for each page
+
+function saveHistory() {
+    const state = JSON.stringify(canvas.toJSON());
+    if (!history[currentPageIndex]) history[currentPageIndex] = [];
+    history[currentPageIndex].splice(historyStep[currentPageIndex] + 1);
+    history[currentPageIndex].push(state);
+    historyStep[currentPageIndex]++;
+    if (history[currentPageIndex].length > 50) history[currentPageIndex].shift();
+}
+
+function undo() {
+    if (historyStep[currentPageIndex] > 0) {
+        historyStep[currentPageIndex]--;
+        const state = history[currentPageIndex][historyStep[currentPageIndex]];
+        canvas.loadFromJSON(state, () => canvas.renderAll());
+        savePageState();
     }
+}
+
+function redo() {
+    if (history[currentPageIndex] && historyStep[currentPageIndex] < history[currentPageIndex].length - 1) {
+        historyStep[currentPageIndex]++;
+        const state = history[currentPageIndex][historyStep[currentPageIndex]];
+        canvas.loadFromJSON(state, () => canvas.renderAll());
+        savePageState();
+    }
+}
+
+document.getElementById("undoBtn").onclick = () => {
+    undo();
 };
 
 document.getElementById("redoBtn").onclick = () => {
-    if (redoStack.length > 0) {
-        const restore = redoStack.pop();
-        history.push(restore);
-        canvas.loadFromJSON(restore, () => {
-            canvas.renderAll();
-        });
-    }
+    redo();
 };
 
-// ================== Eraser Tool ================== //
+// After each modification, save history and page state
+canvas.on('object:modified', () => {
+    savePageState();
+    saveHistory();
+});
+
+canvas.on('object:added', () => {
+    savePageState();
+    saveHistory();
+});
+
+// Eraser tool - remove selected object
 document.getElementById("eraserBtn").onclick = () => {
     const active = canvas.getActiveObject();
     if (active) {
         canvas.remove(active);
         canvas.renderAll();
-        saveState();
+        savePageState();
+        saveHistory();
     }
 };
 
-// ================== Download ================== //
+// Download canvas image
 document.getElementById("downloadBtn").onclick = () => {
     const link = document.createElement("a");
-    link.download = "canvas.png";
+    link.download = `canvas-page-${currentPageIndex + 1}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
 };
 
-function extractCanvasContent() {
-    const textElements = [];
-    const imageCount = canvas.getObjects('image').length;
+// ================== Upload Image ================== //
+fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    canvas.getObjects().forEach(obj => {
-        if (obj.type === 'textbox' || obj.type === 'text') {
-            textElements.push({
-                text: obj.text,
-                x: obj.left,
-                y: obj.top
+    const reader = new FileReader();
+    reader.onload = function (f) {
+        fabric.Image.fromURL(f.target.result, (img) => {
+            const maxWidth = canvas.width * 0.6;
+            const maxHeight = canvas.height * 0.6;
+            const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+            img.set({
+                left: canvas.width / 2,
+                top: canvas.height / 2,
+                originX: 'center',
+                originY: 'center',
+                scaleX: scale,
+                scaleY: scale,
+                hasControls: true,
             });
-        }
-    });
-    return {
-        base64: canvas.toDataURL("image/png").split(",")[1],
-        texts: textElements,
-        imageCount
+            canvas.add(img).setActiveObject(img);
+            canvas.renderAll();
+            savePageState();
+            saveHistory();
+        });
     };
+    reader.readAsDataURL(file);
+});
+
+// Trigger file input on plus image click
+const addImageIcon = document.querySelector('label[for="add"] img') || document.querySelector('img[title="Add Image"]');
+if (addImageIcon) {
+    addImageIcon.style.cursor = 'pointer';
+    addImageIcon.addEventListener('click', () => fileInput.click());
 }
 
-// ================== Google Gemini Integration ================== //
+// ================== Gemini Image Generation ================== //
 async function generateImage() {
-    const promptInput = document.getElementById("prompt").value.trim();
-    
     if (!canWork) return;
-    if (!promptInput) {
-        alert("Please enter a prompt for image generation");
+
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+        alert("Please enter a prompt for image generation.");
         return;
     }
 
@@ -200,12 +245,15 @@ async function generateImage() {
     genButton.disabled = true;
 
     try {
-        const contextInfo = texts.length > 0 
-  ? `The current canvas contains ${imageCount} image(s) and the following instructions: ` +
-    texts.map(t => `"${t.text}" at position (${Math.round(t.x)}, ${Math.round(t.y)})`).join(", ") + "." 
-  : "";
-  const geminiPrompt = `${contextInfo} ${promptInput}`;
+        // Prepare canvas data to send to API
+        const canvasData = canvas.toDataURL('image/png').split(',')[1];
 
+        // Compose prompt with any existing text objects info
+        const texts = canvas.getObjects('textbox').map(t => t.text);
+        const context = texts.length > 0 ? `Canvas text instructions: ${texts.join(", ")}. ` : "";
+        const fullPrompt = context + prompt;
+
+        // Fetch request to Gemini API
         const res = await fetch(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=AIzaSyACphke4UCWwSvsMSSKP4LpKmIPIBl4RM8",
             {
@@ -216,11 +264,11 @@ async function generateImage() {
                         {
                             role: "user",
                             parts: [
-                                { text: geminiPrompt },
+                                { text: fullPrompt },
                                 {
                                     inlineData: {
                                         mimeType: "image/png",
-                                        data: base64,
+                                        data: canvasData,
                                     },
                                 },
                             ],
@@ -231,138 +279,101 @@ async function generateImage() {
         );
 
         const json = await res.json();
-        console.log("API Response:", json);
-
         if (!res.ok || !json?.candidates?.length) {
             throw new Error(json.error?.message || "Failed to generate image");
         }
 
-        let outImage = null;
+        let generatedData = null;
         for (const part of json.candidates[0].content.parts) {
             if (part.inlineData?.data) {
-                outImage = part.inlineData.data;
+                generatedData = part.inlineData.data;
                 break;
             }
         }
 
-        if (!outImage) {
-            throw new Error("No image returned from API");
-        }
+        if (!generatedData) throw new Error("No image data returned from API");
 
-        const fullBase64 = "data:image/png;base64," + outImage;
-        generatedImages.push(fullBase64);
-        currentIndex = generatedImages.length - 1;
-        
-        // Show the generated image in modal
-        showGeneratedImage(fullBase64);
-        
-    } catch (error) {
-        console.error("Generation error:", error);
-        alert("Failed to generate image: " + error.message);
+        const newImageSrc = "data:image/png;base64," + generatedData;
+
+        // Save current page state before switching
+        savePageState();
+
+        // Add new page with generated image
+        const newPageCanvas = new fabric.Canvas(null, { width: 500, height: 500 });
+        const img = await new Promise((resolve) => {
+            fabric.Image.fromURL(newImageSrc, (image) => {
+                resolve(image);
+            });
+        });
+
+        // Add image to new page canvas and scale
+        const maxWidth = 500 * 0.7;
+        const maxHeight = 500 * 0.7;
+        const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+
+        img.set({
+            left: 500 / 2,
+            top: 500 / 2,
+            originX: 'center',
+            originY: 'center',
+            scaleX: scale,
+            scaleY: scale,
+            hasControls: true,
+        });
+        newPageCanvas.add(img);
+
+        // Save new page JSON
+        const newPageJSON = JSON.stringify(newPageCanvas.toJSON());
+
+        // Add new page to pages array and switch to it
+        pages.push(newPageJSON);
+        currentPageIndex = pages.length - 1;
+
+        loadPageState(currentPageIndex);
+        promptInput.value = "";
+
+    } catch (err) {
+        alert("Failed to generate image: " + err.message);
+        console.error(err);
     } finally {
         canWork = true;
         genButton.textContent = "Generate Image";
         genButton.disabled = false;
-        updateNavigationButtons();
     }
 }
 
-// ================== Show Generated Image ================== //
-function showGeneratedImage(imageUrl) {
-    modalImage.src = imageUrl;
-    imageModal.classList.add('show');
-}
-
-// ================== Modal Functions ================== //
-function closeImageModal() {
-    imageModal.classList.remove('show');
-}
-
-function addGeneratedToCanvas() {
-    if (generatedImages[currentIndex]) {
-        enterEditingMode();
-        fabric.Image.fromURL(generatedImages[currentIndex], function (img) {
-            const maxWidth = canvas.width * 0.7;
-            const maxHeight = canvas.height * 0.7;
-            const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-            
-            img.set({
-                left: canvas.width / 2,
-                top: canvas.height / 2,
-                originX: 'center',
-                originY: 'center',
-                scaleX: scale,
-                scaleY: scale,
-                hasControls: true
-            });
-            canvas.add(img).setActiveObject(img);
-            canvas.renderAll();
-            saveState();
-            closeImageModal();
-        });
-    }
-}
-
-function downloadGeneratedImage() {
-    if (generatedImages[currentIndex]) {
-        const link = document.createElement("a");
-        link.download = `generated-image-${Date.now()}.png`;
-        link.href = generatedImages[currentIndex];
-        link.click();
-    }
-}
-
-// ================== Navigation Arrows ================== //
-document.getElementById("nextBtn").onclick = () => {
-    if (generatedImages.length > 0 && currentIndex < generatedImages.length - 1) {
-        currentIndex++;
-        showGeneratedImage(generatedImages[currentIndex]);
-        updateNavigationButtons();
-    }
-};
-
-document.getElementById("prevBtn").onclick = () => {
-    if (generatedImages.length > 0 && currentIndex > 0) {
-        currentIndex--;
-        showGeneratedImage(generatedImages[currentIndex]);
-        updateNavigationButtons();
-    }
-};
-
-// ================== Generate Button ================== //
 genButton.onclick = generateImage;
 
-// ================== Navbar Hover Label ================== //
-const label = document.getElementById("label");
-const navbarImgs = document.querySelectorAll(".navbar img, .navbar label img");
+// ================== Keyboard Shortcuts ================== //
+window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-navbarImgs.forEach(img => {
-    img.addEventListener("mouseenter", (e) => {
-        const title = e.target.title || e.target.parentElement.querySelector('img')?.title || "Tool";
-        label.textContent = title;
-        label.style.display = "flex";
-        e.target.parentElement.appendChild(label)
-    });
-    img.addEventListener("mouseleave", () => {
-        label.style.display = 'none';
-    });
-});
+    // Ctrl+Z for undo
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undo();
+    }
 
-// ================== Canvas Event Handlers ================== //
-canvas.on('object:added', () => {
-    if (canvas.getObjects().length > 0) {
-        enterEditingMode();
+    // Ctrl+Y for redo
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+    }
+
+    // Delete key to erase selected object
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        const active = canvas.getActiveObject();
+        if (active) {
+            canvas.remove(active);
+            canvas.renderAll();
+            savePageState();
+            saveHistory();
+        }
     }
 });
 
 // ================== Initialization ================== //
-saveState(); // Save initial empty state
-updateNavigationButtons();
-
-// Allow Enter key to generate
-document.getElementById("prompt").addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        generateImage();
-    }
-});
+// Initialize with one empty page
+pages.push(null);
+loadPageState(0);
+saveHistory();

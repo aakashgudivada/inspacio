@@ -242,3 +242,7 @@ video{
   height: auto;
   display: none;
 }
+
+.upper-canvas {
+  border: 3px dotted black;
+}
