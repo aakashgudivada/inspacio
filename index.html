@@ -24,7 +24,10 @@
     <p1 id="desc">The AI-powered workspace to help you read, write, and organize research with ease.</p1>
     <button onclick="window.location.href = `/edit`" class="cta-button">Start Generating</button>
   </main>
-  <video autoplay="on"></video>
+  <video id="video" autoplay loop playsinline>
+    <source src="src/frontvid.mp4" type="video/mp4">
+    Your browser does not support on-screen video.
+  </video>
   <h3 id="casetitle">USE CASES</h3>
   <p id="casedesc">Types of things you can find help with</p>
   <div class="cases">
@@ -45,8 +48,8 @@
     </li>
     <li>
         <img src="src/imgs/control.png">
-        <h2>Lighting and Color Magic</h2>
-        <p>Switch lighting modes and color palettes to visualize your dream mood.</p>
+        <h2>Draw & Create</h2>
+        <p>Draw a visual figure and watch the magic.</p>
     </li>
     <li>
       <img src="src/imgs/swap.png">
@@ -64,7 +67,7 @@
     <p>Meet your personal AI Artist</p>
     <button onclick="window.open(`/edit`)">Explore</button>
     <h2>Inspacio @ 2025</h2>
-    <h4>All rights reserved.</h4>
+    <h4>Made with 💖 for NanoBanana Hackathon.</h4>
   </footer>
   <script src="index.js"></script>
 </body>

@@ -236,11 +236,13 @@ footer button:hover{
     position: absolute;
 }
 
-video{
+#video{
   width: 70vw;
   margin-left: 15vw;
   height: auto;
-  display: none;
+  z-index: 50;
+  border: none;
+  transform: translateY(-20%);
 }
 
 .upper-canvas {

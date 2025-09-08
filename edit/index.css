@@ -258,8 +258,10 @@ canvas-output-wrapper {
   }
   
   #prevBtn, #nextBtn {
-    display: inline-block;
+    display: flex;
     cursor: pointer;
+    align-items: center;
+    justify-content: center;
     margin: 0 10px;
     font-size: 1.8rem;
     user-select: none;
