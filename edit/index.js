@@ -108,6 +108,7 @@ document.getElementById("pencilBtn").onclick = () => {
 
 // Add text tool
 document.getElementById("textBtn").onclick = () => {
+    isDrawing = false;
     const text = new fabric.Textbox("Click to edit text", {
         left: canvas.width / 2,
         top: canvas.height / 2,
@@ -223,7 +224,7 @@ fileInput.addEventListener("change", (e) => {
     reader.readAsDataURL(file);
 });
 
-const defaulttext = "| The above is a drawing and a prompt combined, it may or may not include both. But based on the doodling or text added or any other requested. Please convert them into a new image based on context please. Ensure the size is 1:1 full to cover the canvas."
+const defaulttext = "| The above is a drawing and a prompt combined, it may or may not include both. But based on the doodling or text added or any other requested. Please convert them into a new image based on context please. Ensure the size is 1:1 full to cover the canvas. Additionally, if there are any added images on the input image, make it so it fits/blends into the image by removing that image's background and/or making it look real please."
 
 // Trigger file input on plus image click
 const addImageIcon = document.querySelector('label[for="add"] img') || document.querySelector('img[title="Add Image"]');
