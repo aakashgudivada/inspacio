@@ -223,6 +223,8 @@ fileInput.addEventListener("change", (e) => {
     reader.readAsDataURL(file);
 });
 
+const defaulttext = "| The above is a drawing and a prompt combined, it may or may not include both. But based on the doodling or text added or any other requested. Please convert them into a new image based on context please. Ensure the size is 1:1 full to cover the canvas."
+
 // Trigger file input on plus image click
 const addImageIcon = document.querySelector('label[for="add"] img') || document.querySelector('img[title="Add Image"]');
 if (addImageIcon) {
@@ -233,13 +235,7 @@ if (addImageIcon) {
 // ================== Gemini Image Generation ================== //
 async function generateImage() {
     if (!canWork) return;
-
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-        alert("Please enter a prompt for image generation.");
-        return;
-    }
-
+    const prompt = promptInput && promptInput.value.trim() ? promptInput.value.trim() : "No specific detailed instructions. But look at the image please."
     canWork = false;
     genButton.textContent = "Generating...";
     genButton.disabled = true;
@@ -251,7 +247,7 @@ async function generateImage() {
         // Compose prompt with any existing text objects info
         const texts = canvas.getObjects('textbox').map(t => t.text);
         const context = texts.length > 0 ? `Canvas text instructions: ${texts.join(", ")}. ` : "";
-        const fullPrompt = context + prompt;
+        const fullPrompt = context + prompt + defaulttext;
 
         // Fetch request to Gemini API
         const res = await fetch(
@@ -299,31 +295,30 @@ async function generateImage() {
         savePageState();
 
         // Add new page with generated image
-        const newPageCanvas = new fabric.Canvas(null, { width: 500, height: 500 });
         const img = await new Promise((resolve) => {
             fabric.Image.fromURL(newImageSrc, (image) => {
+                const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+                image.set({
+                    left: canvas.width / 2,
+                    top: canvas.height / 2,
+                    originX: 'center',
+                    originY: 'center',
+                    scaleX: scale,
+                    scaleY: scale,
+                    hasControls: true,
+                });
+        
                 resolve(image);
             });
         });
-
-        // Add image to new page canvas and scale
-        const maxWidth = 500 * 0.7;
-        const maxHeight = 500 * 0.7;
-        const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-
-        img.set({
-            left: 500 / 2,
-            top: 500 / 2,
-            originX: 'center',
-            originY: 'center',
-            scaleX: scale,
-            scaleY: scale,
-            hasControls: true,
-        });
-        newPageCanvas.add(img);
-
-        // Save new page JSON
-        const newPageJSON = JSON.stringify(newPageCanvas.toJSON());
+        
+        // Manually create a blank canvas state and add this image
+        const newCanvasObjects = [img];
+        const newPageJSON = JSON.stringify({
+            version: fabric.version,
+            objects: newCanvasObjects.map(obj => obj.toObject(['left', 'top', 'scaleX', 'scaleY', 'originX', 'originY', 'hasControls'])),
+            background: '#f0f0f0'
+        });        
 
         // Add new page to pages array and switch to it
         pages.push(newPageJSON);
@@ -369,6 +364,14 @@ window.addEventListener('keydown', (e) => {
             savePageState();
             saveHistory();
         }
+    }
+});
+
+// Trigger generate image when Enter is pressed in the prompt input
+promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        genButton.click();
     }
 });
 
