@@ -239,7 +239,8 @@ footer button:hover{
 #video{
   width: 70vw;
   margin-left: 15vw;
-  height: auto;
+  height: 70vh;
+  display: flex;
   z-index: 50;
   border: none;
   transform: translateY(-20%);
